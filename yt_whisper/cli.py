@@ -45,6 +45,7 @@ def main():
     model = whisper.load_model(model_name)
     audios = get_audio(args.pop("video"))
     break_lines = args.pop("break_lines")
+    naming = args.pop('naming')
 
     for item in audios:
         audio_path = item['audio_path']
@@ -52,7 +53,7 @@ def main():
         result = model.transcribe(audio_path, **args)
         warnings.filterwarnings("default")
         
-        filename = slugify(item['title']) if args['naming'] == 'title' else item['id']
+        filename = slugify(item['title']) if naming == 'title' else item['id']
         if (subtitles_format == 'vtt'):
             vtt_path = os.path.join(output_dir, f"{filename}.vtt")
             with open(vtt_path, 'w', encoding="utf-8") as vtt:
