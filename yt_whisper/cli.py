@@ -28,6 +28,8 @@ def main():
 
     parser.add_argument("--break-lines", type=int, default=0, 
                         help="Whether to break lines into a bottom-heavy pyramid shape if line length exceeds N characters. 0 disables line breaking.")
+    parser.add_argument("--naming", type=str, default="title", choices=['title','id'],
+                        help="use title or id as the file name")
 
     args = parser.parse_args().__dict__
     model_name: str = args.pop("model")
@@ -44,19 +46,21 @@ def main():
     audios = get_audio(args.pop("video"))
     break_lines = args.pop("break_lines")
 
-    for title, audio_path in audios.items():
+    for item in audios:
+        audio_path = item['audio_path']
         warnings.filterwarnings("ignore")
         result = model.transcribe(audio_path, **args)
         warnings.filterwarnings("default")
-
+        
+        filename = slugify(item['title']) if args['naming'] == 'title' else item['id']
         if (subtitles_format == 'vtt'):
-            vtt_path = os.path.join(output_dir, f"{slugify(title)}.vtt")
+            vtt_path = os.path.join(output_dir, f"{filename}.vtt")
             with open(vtt_path, 'w', encoding="utf-8") as vtt:
                 write_vtt(result["segments"], file=vtt, line_length=break_lines)
 
             print("Saved VTT to", os.path.abspath(vtt_path))
         else:
-            srt_path = os.path.join(output_dir, f"{slugify(title)}.srt")
+            srt_path = os.path.join(output_dir, f"{filename}.srt")
             with open(srt_path, 'w', encoding="utf-8") as srt:
                 write_srt(result["segments"], file=srt, line_length=break_lines)
 
@@ -74,14 +78,15 @@ def get_audio(urls):
         'postprocessors': [{'preferredcodec': 'mp3', 'preferredquality': '192', 'key': 'FFmpegExtractAudio', }],
     })
 
-    paths = {}
+    paths = []
 
     for url in urls:
         result = ydl.extract_info(url, download=True)
+        result['audio_path'] = os.path.join(temp_dir, f"{result['id']}.mp3")
         print(
             f"Downloaded video \"{result['title']}\". Generating subtitles..."
         )
-        paths[result["title"]] = os.path.join(temp_dir, f"{result['id']}.mp3")
+        paths.append(result)
 
     return paths
 
