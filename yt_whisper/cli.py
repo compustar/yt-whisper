@@ -79,15 +79,15 @@ def get_audio(urls):
         'postprocessors': [{'preferredcodec': 'mp3', 'preferredquality': '192', 'key': 'FFmpegExtractAudio', }],
     })
 
-    paths = []
-
     for url in urls:
-        result = ydl.extract_info(url, process=False)
+        result = ydl.extract_info(url, process=False)        
         result['audio_path'] = os.path.join(temp_dir, f"{result['id']}.mp3")
+        print(f"To be downloaded \"{result['audio_path']}\"...")
         if os.path.exists(result['audio_path']): 
             print(f"Already downloaded video \"{result['title']}\". Generating subtitles...")
         else:
             result = ydl.extract_info(url, download=True)
+            result['audio_path'] = os.path.join(temp_dir, f"{result['id']}.mp3")
             print(
                 f"Downloaded video \"{result['title']}\". Generating subtitles..."
             )
